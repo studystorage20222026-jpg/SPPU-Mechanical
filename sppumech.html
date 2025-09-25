@@ -1,1 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPPU Mechanical - 3D Interface</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Orbitron for a mechanical feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles for the black and white theme */
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            /* Hide the default cursor and use our custom one */
+            cursor: none; 
+        }
+
+        /* Custom cursor styles */
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            position: fixed;
+            z-index: 1000;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s;
+        }
+
+        .cursor-outline {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            position: fixed;
+            z-index: 1000;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease-out, opacity 0.2s;
+        }
+        
+        /* Make cursor interactive on hover */
+        body:has(a:hover, button:hover) .cursor-dot {
+            width: 12px;
+            height: 12px;
+        }
+        body:has(a:hover, button:hover) .cursor-outline {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 0.5;
+        }
+
+
+        /* The canvas for the 3D object will be the background */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Place it behind all other content */
+        }
+        
+        /* Glassmorphism effect for UI elements */
+        .glass-card {
+            background: rgba(16, 16, 16, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Custom glow effect for the main title and buttons */
+        .text-glow {
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        .button-glow {
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.7), 0 0 15px rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .button-glow:hover {
+            box-shadow: 0 0 10px rgba(255, 255, 255, 1), 0 0 25px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Custom scrollbar for a more integrated look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cccccc;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffffff;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Custom Cursor Elements -->
+    <div class="cursor-outline"></div>
+    <div class="cursor-dot"></div>
+
+    <!-- The canvas for our 3D background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Main container for all page content -->
+    <div class="relative min-h-screen w-full overflow-y-auto flex flex-col">
+
+        <!-- Header and Navigation -->
+        <header class="glass-card sticky top-0 z-50">
+            <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <div id="home-button" class="flex items-center space-x-3 cursor-pointer">
+                    <!-- NEW Image Logo -->
+                    <img src="http://googleusercontent.com/file_content/2" alt="Mechanical Engineering Logo" class="w-12 h-12 rounded-full">
+                    <span class="text-2xl font-bold text-white">SPPU Mechanical</span>
+                </div>
+                <!-- UPDATED Navigation Tabs -->
+                <div class="hidden lg:flex items-center space-x-6 text-sm" id="nav-links">
+                    <a href="#" class="nav-link text-gray-300 hover:text-white transition-colors duration-300" data-page="sem1">SEM 1</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white transition-colors duration-300" data-page="sem2">SEM 2</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white transition-colors duration-300" data-page="sem3">SEM 3</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white transition-colors duration-300" data-page="sem4">SEM 4</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white transition-colors duration-300" data-page="sem5">SEM 5</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white transition-colors duration-300" data-page="sem6">SEM 6</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white transition-colors duration-300" data-page="sem7">SEM 7</a>
+                    <a href="#" class="nav-link text-gray-300 hover:text-white transition-colors duration-300" data-page="sem8">SEM 8</a>
+                </div>
+                 <button class="lg:hidden text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main content area -->
+        <div id="main-content" class="flex-grow">
+            <!-- Hero Section -->
+            <main class="container mx-auto px-6 py-24 md:py-32 flex flex-col items-center text-center">
+                <div class="w-24 h-24 mb-8 border-4 border-white rounded-full flex items-center justify-center bg-gray-900/50">
+                     <svg class="w-16 h-16 text-white animate-spin" style="animation-duration: 5s;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16v4m-2-2h4m5 11v4m-2-2h4M12 8a4 4 0 100 8 4 4 0 000-8z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h1 class="text-4xl md:text-6xl font-bold text-white mb-4">
+                    <span class="text-white text-glow">SPPU</span> Mechanical
+                </h1>
+                <p class="text-lg text-gray-400 max-w-2xl mx-auto mb-8">
+                    Your central hub for engineering knowledge. We share notes for free of cost.
+                </p>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <a href="#" class="bg-white text-black font-bold py-3 px-8 rounded-md button-glow">
+                        Explore Notes
+                    </a>
+                    <a href="#" class="bg-transparent border-2 border-gray-500 text-white font-bold py-3 px-8 rounded-md hover:border-white hover:text-white transition-colors duration-300">
+                        Upload Schematic
+                    </a>
+                </div>
+            </main>
+        </div>
+
+        <!-- Semester Page Content (Initially Hidden) -->
+        <div id="semester-page-content" class="hidden flex-grow container mx-auto px-6 py-16">
+            <div class="glass-card rounded-xl p-8 text-center">
+                <h2 id="semester-title" class="text-3xl md:text-4xl font-bold text-white mb-12"></h2>
+                <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+                    <button class="bg-white text-black font-bold py-3 px-10 rounded-md button-glow text-lg">
+                        In Sem Material
+                    </button>
+                    <button class="bg-transparent border-2 border-gray-500 text-white font-bold py-3 px-10 rounded-md hover:border-white hover:text-white transition-colors duration-300 text-lg">
+                        End Sem Material
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: SEM 5 Specific Content (Initially Hidden) -->
+        <div id="sem5-content" class="hidden flex-grow container mx-auto px-6 py-16">
+            <div class="glass-card rounded-xl p-8 text-center">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-12">SEM 5 Materials</h2>
+                <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+                    <button class="bg-white text-black font-bold py-3 px-10 rounded-md button-glow text-lg">
+                        In Sem Material
+                    </button>
+                    <button class="bg-transparent border-2 border-gray-500 text-white font-bold py-3 px-10 rounded-md hover:border-white hover:text-white transition-colors duration-300 text-lg">
+                        End Sem Material
+                    </button>
+                    <a href="#" class="bg-white text-black font-bold py-3 px-10 rounded-md button-glow text-lg">
+                        Syllabus PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: SEM 7 Specific Content (Initially Hidden) -->
+        <div id="sem7-content" class="hidden flex-grow container mx-auto px-6 py-16">
+            <div class="glass-card rounded-xl p-8">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-8 text-center">SEM 7 Materials</h2>
+                
+                <!-- Other Buttons -->
+                <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-12">
+                     <button class="bg-white text-black font-bold py-3 px-10 rounded-md button-glow text-lg">
+                        In Sem Material
+                    </button>
+                    <a href="#" class="bg-white text-black font-bold py-3 px-10 rounded-md button-glow text-lg">
+                        Syllabus PDF
+                    </a>
+                    <a href="#" class="bg-transparent border-2 border-gray-500 text-white font-bold py-3 px-10 rounded-md hover:border-white hover:text-white transition-colors duration-300 text-lg">
+                        OLD RESOURCE (Notes & QP)
+                    </a>
+                </div>
+
+                <!-- End Sem Section -->
+                <div class="border-t border-gray-700 pt-8">
+                    <h3 class="text-2xl font-bold text-white mb-6 text-center">End Sem Material</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
+                        <a href="#" class="text-gray-300 hover:text-white hover:underline p-3 rounded-md transition-colors duration-300">END SEM Notes + Question Paper</a>
+                        <a href="#" class="text-gray-300 hover:text-white hover:underline p-3 rounded-md transition-colors duration-300">HVAC Notes and Question Papers</a>
+                        <a href="#" class="text-gray-300 hover:text-white hover:underline p-3 rounded-md transition-colors duration-300">DOM Notes and Question Papers</a>
+                        <a href="#" class="text-gray-300 hover:text-white hover:underline p-3 rounded-md transition-colors duration-300">Turbomachinery Notes and Question Papers</a>
+                        <a href="#" class="text-gray-300 hover:text-white hover:underline p-3 rounded-md transition-colors duration-300">PDD Notes & Question Papers</a>
+                        <a href="#" class="text-gray-300 hover:text-white hover:underline p-3 rounded-md transition-colors duration-300">IE Notes and Question Papers</a>
+                        <a href="#" class="text-gray-300 hover:text-white hover:underline p-3 rounded-md transition-colors duration-300">Operation Research Question Papers (ONLY)</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- NEW Footer -->
+        <footer class="glass-card mt-16">
+            <div class="container mx-auto px-6 py-6 flex flex-col items-center">
+                <div class="flex flex-col sm:flex-row justify-between items-center w-full mb-4">
+                    <p class="text-gray-400 text-sm mb-4 sm:mb-0">&copy; 2024 SPPU Mechanical. All Rights Reserved.</p>
+                    <button class="bg-white text-black font-bold py-2 px-6 rounded-md text-sm button-glow">
+                        Contact Us
+                    </button>
+                </div>
+                <div class="border-t border-gray-700 w-full my-4"></div>
+                <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">Old Website</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">For BE QUERRY CONTACT</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">For TE QUERRY CONTACT</a>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Three.js for the 3D background -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- Custom Cursor Logic ---
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+
+        window.addEventListener('mousemove', (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+
+            cursorDot.style.left = `${posX}px`;
+            cursorDot.style.top = `${posY}px`;
+
+            cursorOutline.style.left = `${posX}px`;
+            cursorOutline.style.top = `${posY}px`;
+        });
+
+        // --- Page Navigation Logic ---
+        const mainContent = document.getElementById('main-content');
+        const semesterPageContent = document.getElementById('semester-page-content');
+        const semesterTitle = document.getElementById('semester-title');
+        const sem5Content = document.getElementById('sem5-content');
+        const sem7Content = document.getElementById('sem7-content');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const homeButton = document.getElementById('home-button');
+
+        const allPageContents = [mainContent, semesterPageContent, sem5Content, sem7Content];
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageId = e.target.dataset.page;
+                const pageTitle = e.target.textContent;
+
+                // Hide all content sections first
+                allPageContents.forEach(content => content.classList.add('hidden'));
+
+                if (pageId === 'sem5') {
+                    // Show SEM 5 specific content
+                    sem5Content.classList.remove('hidden');
+                } else if (pageId === 'sem7') {
+                    // Show SEM 7 specific content
+                    sem7Content.classList.remove('hidden');
+                } else {
+                    // Show the generic semester page for others
+                    semesterTitle.textContent = `${pageTitle} Materials`;
+                    semesterPageContent.classList.remove('hidden');
+                }
+            });
+        });
+
+        homeButton.addEventListener('click', () => {
+            // Hide all semester-specific pages and show the main content
+            allPageContents.forEach(content => content.classList.add('hidden'));
+            mainContent.classList.remove('hidden');
+        });
+
+
+        // --- Three.js Background Logic ---
+        const canvas = document.getElementById('bg-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // --- NEW: Function to create a gear geometry ---
+        function createGearGeometry(outerRadius, innerRadius, teeth, depth) {
+            const shape = new THREE.Shape();
+            const anglePerTooth = (2 * Math.PI) / teeth;
+            const halfAngle = anglePerTooth / 2;
+            const toothTopRatio = 0.5; // How wide the top of the tooth is
+            
+            for (let i = 0; i < teeth; i++) {
+                const angle = i * anglePerTooth;
+
+                // Points for a single tooth and valley
+                const p0 = new THREE.Vector2(innerRadius * Math.cos(angle - halfAngle * (1 - toothTopRatio)), innerRadius * Math.sin(angle - halfAngle * (1 - toothTopRatio)));
+                const p1 = new THREE.Vector2(outerRadius * Math.cos(angle - halfAngle * toothTopRatio), outerRadius * Math.sin(angle - halfAngle * toothTopRatio));
+                const p2 = new THREE.Vector2(outerRadius * Math.cos(angle + halfAngle * toothTopRatio), outerRadius * Math.sin(angle + halfAngle * toothTopRatio));
+                const p3 = new THREE.Vector2(innerRadius * Math.cos(angle + halfAngle * (1 - toothTopRatio)), innerRadius * Math.sin(angle + halfAngle * (1 - toothTopRatio)));
+                
+                if (i === 0) {
+                    shape.moveTo(p0.x, p0.y);
+                }
+                shape.lineTo(p1.x, p1.y);
+                shape.lineTo(p2.x, p2.y);
+                shape.lineTo(p3.x, p3.y);
+            }
+
+            // Create a hole in the center of the gear
+            const holePath = new THREE.Path();
+            holePath.absarc(0, 0, innerRadius * 0.6, 0, Math.PI * 2, false);
+            shape.holes.push(holePath);
+
+            // Settings for extruding the 2D shape into a 3D object
+            const extrudeSettings = {
+                steps: 1,
+                depth: depth,
+                bevelEnabled: true,
+                bevelThickness: 0.1,
+                bevelSize: 0.05,
+                bevelSegments: 2
+            };
+
+            return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        }
+
+        // Create the gear geometry
+        const geometry = createGearGeometry(2.2, 1.6, 20, 0.5);
+        
+        const material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 });
+        const mesh = new THREE.Mesh(geometry, material);
+        // Center the geometry before adding to the scene
+        geometry.center();
+        scene.add(mesh);
+        
+        const mouse = new THREE.Vector2();
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        const clock = new THREE.Clock();
+        const animate = () => {
+            // The easing (0.05) makes the movement smooth
+            mesh.rotation.y += (mouse.x * Math.PI * 0.2 - mesh.rotation.y) * 0.05;
+            mesh.rotation.x += (-mouse.y * Math.PI * 0.2 - mesh.rotation.x) * 0.05;
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        };
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        });
+
+        animate();
+    </script>
+</body>
+</html>
+
+
+
 
